@@ -73,7 +73,21 @@ void tokenize( ElizaContext* context, char* input_buffer) {
     }
 }
 
+
+char* keyword_scanner(ElizaContext* context, char* keywords[], int keyword_count){
+
+    for (int keyword_idx = 0; keyword_idx < keyword_count ; keyword_idx++) {
+       for (int token_idx = 0; token_idx < context->word_count; token_idx++) {
+           if (strcmp(context->words[token_idx], keywords[keyword_idx]) == 0) {
+               return context->words[token_idx];
+           }
+       }
+    }
+    return NULL;
+}
+
 int main(void) {
+    char* keywords[] = {"i","you","computer","sad","mom"};
     ElizaContext* context = initialize_context();
     if (context == NULL) return 1;
     char input_buffer[512];
@@ -87,6 +101,13 @@ int main(void) {
     for (int token_idx = 0; token_idx < context->word_count; token_idx++) {
         printf("%s\n", context->words[token_idx]);
     }
+
+
+    size_t keyword_count = sizeof(keywords)/sizeof(keywords[0]);
+    char* achado = keyword_scanner(context, keywords, keyword_count);
+    if (achado == NULL) {
+        printf("I dont Know\n");
+    }else{printf("Achado: %s\n",achado);}
 
     free_string_buffer(copied_buffer);
     free_context(context);
