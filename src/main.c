@@ -3,14 +3,35 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct context {
+    char*  words[128];
+    int   word_count;
+}ElizaContext;
+
+
+
+ElizaContext* initialize_context() {
+    ElizaContext* context = malloc(sizeof(ElizaContext));
+    if (context == NULL) return NULL;
+    context->word_count = 0;
+    return context;
+}
+
+void free_context(ElizaContext* context) {
+    free(context);
+}
+
+void add_word(ElizaContext* context, char* word) {
+    context->words[context->word_count] = word;
+    context->word_count++;
+}
 
 void get_input(char *input_buffer, size_t buffer_size) {
     fgets(input_buffer, buffer_size, stdin);
 }
 
-char* copy_string(char *input_buffer, size_t buffer_size) {
-    char* copied_buffer = malloc(buffer_size + 1);
-    memcpy(copied_buffer, input_buffer, buffer_size + 1);
+char* copy_string(char *input_buffer) {
+    char* copied_buffer = strdup(input_buffer);
     return copied_buffer;
 
 }
@@ -42,16 +63,32 @@ void remove_punctuation(char* input_buffer) {
 
 }
 
+void tokenize( ElizaContext* context, char* input_buffer) {
+    char* token = strtok(input_buffer, " ");
+    while (token != NULL) {
+        if (context->word_count < 128) {
+            add_word(context, token);
+        }
+        token = strtok(NULL, " ");
+    }
+}
+
 int main(void) {
+    ElizaContext* context = initialize_context();
+    if (context == NULL) return 1;
     char input_buffer[512];
     get_input(input_buffer, sizeof(input_buffer));
     clean_newline(input_buffer);
     lowercase_string(input_buffer);
     remove_punctuation(input_buffer);
+    char* copied_buffer = copy_string(input_buffer);
+    tokenize(context , input_buffer);
 
-    char* copied_buffer = copy_string(input_buffer, strlen(input_buffer));
-    printf("Input: %s\n", copied_buffer);
-    printf("Hello, World!\n");
+    for (int token_idx = 0; token_idx < context->word_count; token_idx++) {
+        printf("%s\n", context->words[token_idx]);
+    }
+
     free_string_buffer(copied_buffer);
+    free_context(context);
     return 0;
 }
