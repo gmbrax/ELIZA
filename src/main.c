@@ -9,6 +9,11 @@ typedef struct context {
 }ElizaContext;
 
 
+typedef struct {
+    char*  word;
+    int  weight;
+}ElizaKeyword;
+
 
 ElizaContext* initialize_context() {
     ElizaContext* context = malloc(sizeof(ElizaContext));
@@ -74,20 +79,30 @@ void tokenize( ElizaContext* context, char* input_buffer) {
 }
 
 
-char* keyword_scanner(ElizaContext* context, char* keywords[], int keyword_count){
-
+char* keyword_scanner(ElizaContext* context, ElizaKeyword keywords[],  unsigned int keyword_count){
+    char *best_word = NULL;
+    int best_word_weight = -1;
     for (int keyword_idx = 0; keyword_idx < keyword_count ; keyword_idx++) {
        for (int token_idx = 0; token_idx < context->word_count; token_idx++) {
-           if (strcmp(context->words[token_idx], keywords[keyword_idx]) == 0) {
-               return context->words[token_idx];
+           if (strcmp(context->words[token_idx], keywords[keyword_idx].word) == 0  && (best_word_weight < keywords[keyword_idx].weight)){
+               best_word = context->words[token_idx];
+               best_word_weight = keywords[keyword_idx].weight;
+
            }
        }
     }
-    return NULL;
+    return best_word;
 }
 
 int main(void) {
-    char* keywords[] = {"i","you","computer","sad","mom"};
+    ElizaKeyword keywords_array[] = {
+        {"i",1},
+        {"you",2},
+        {"computer",6},
+        {"sad",8},
+        {"mom",10}
+
+    };
     ElizaContext* context = initialize_context();
     if (context == NULL) return 1;
     char input_buffer[512];
@@ -103,11 +118,11 @@ int main(void) {
     }
 
 
-    size_t keyword_count = sizeof(keywords)/sizeof(keywords[0]);
-    char* achado = keyword_scanner(context, keywords, keyword_count);
-    if (achado == NULL) {
+    size_t keyword_count = sizeof(keywords_array)/sizeof(keywords_array[0]);
+    char* found = keyword_scanner(context, keywords_array, keyword_count);
+    if (found == NULL) {
         printf("I dont Know\n");
-    }else{printf("Achado: %s\n",achado);}
+    }else{printf("Achado: %s\n",found);}
 
     free_string_buffer(copied_buffer);
     free_context(context);
