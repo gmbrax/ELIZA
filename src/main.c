@@ -9,6 +9,16 @@ typedef struct context {
 }ElizaContext;
 
 
+typedef enum {
+    TOKEN_LITERAL,
+    TOKEN_WILDCARD
+} TokenType;
+
+typedef struct {
+    TokenType type;
+    char*     word;
+} PatternToken;
+
 typedef struct {
     char*  word;
     int  weight;
@@ -93,6 +103,30 @@ char* keyword_scanner(ElizaContext* context, ElizaKeyword keywords[],  unsigned 
     }
     return best_word;
 }
+int pattern_match(PatternToken pattern[], int pattern_size, int current_pattern_index, ElizaContext* context, int current_phrase_index) {
+    if (current_pattern_index == pattern_size)
+        return (current_phrase_index == context->word_count);
+
+    PatternToken current_pattern = pattern[current_pattern_index];
+
+    if (current_pattern.type == TOKEN_LITERAL) {
+        if (current_phrase_index < context->word_count
+            && strcmp(context->words[current_phrase_index], current_pattern.word) == 0) {
+            return pattern_match(pattern, pattern_size, current_pattern_index + 1, context, current_phrase_index + 1);
+            }
+        return 0;
+    }
+
+    if (current_pattern.type == TOKEN_WILDCARD) {
+        for (int gobble_index = 0; gobble_index <= (context->word_count - current_phrase_index); gobble_index++) {
+            if (pattern_match(pattern, pattern_size, current_pattern_index + 1, context, current_phrase_index + gobble_index))
+                return 1;
+        }
+        return 0;
+    }
+
+    return 0;
+}
 
 int main(void) {
     ElizaKeyword keywords_array[] = {
@@ -103,6 +137,21 @@ int main(void) {
         {"mom",10}
 
     };
+
+    PatternToken pat_computer_hates[] = {
+        {TOKEN_WILDCARD, NULL},
+        {TOKEN_LITERAL, "computer"},
+        {TOKEN_LITERAL, "hates"},
+        {TOKEN_WILDCARD, NULL}
+    };
+
+    PatternToken pat_i_am[] = {
+        {TOKEN_WILDCARD, NULL},
+        {TOKEN_LITERAL, "i"},
+        {TOKEN_LITERAL, "am"},
+        {TOKEN_WILDCARD, NULL},
+    };
+
     ElizaContext* context = initialize_context();
     if (context == NULL) return 1;
     char input_buffer[512];
@@ -124,6 +173,9 @@ int main(void) {
         printf("I dont Know\n");
     }else{printf("Achado: %s\n",found);}
 
+    int size = sizeof(pat_i_am)/sizeof(pat_i_am[0]);
+    int pattern_match_result = pattern_match(pat_i_am, size, 0, context, 0);
+    printf("Matched: %i", pattern_match_result);
     free_string_buffer(copied_buffer);
     free_context(context);
     return 0;
