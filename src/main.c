@@ -25,7 +25,7 @@ typedef struct {
 typedef  struct {
     PatternToken* pattern;
     int pattern_size;
-    char** response;
+    char** responses;
     int response_count;
 }ElizaRule;
 
@@ -43,15 +43,6 @@ typedef struct {
     int group_end[MAX_GROUPS];
 }MatchResult;
 
-ElizaKeyword keywords_array[] = {
-    {"i",1},
-    {"you",2},
-    {"computer",6},
-    {"sad",8},
-    {"mom",10}
-
-};
-
 PatternToken pat_computer_hates[] = {
     {TOKEN_WILDCARD, NULL},
     {TOKEN_LITERAL, "computer"},
@@ -65,6 +56,25 @@ PatternToken pat_i_am[] = {
     {TOKEN_LITERAL, "am"},
     {TOKEN_WILDCARD, NULL},
 };
+
+char* resp_i_am[] = {
+    "Why do you say you are (1)?"
+};
+
+
+ElizaRule rules_i[] = {
+    { pat_i_am, 4, resp_i_am, 1 }
+};
+
+ElizaKeyword keywords_array[] = {
+    {"i", 1, rules_i, 1},
+    {"you", 2, NULL, 0},
+    {"computer", 6, NULL, 0},
+    {"sad", 8, NULL, 0},
+    {"mom", 10, NULL, 0}
+};
+
+
 
 
 ElizaContext* initialize_context() {
