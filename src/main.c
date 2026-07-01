@@ -233,9 +233,15 @@ int ELIZALoop(ElizaContext* context) {
                 if (found == NULL) {
                     printf("ELIZA:>Tell me more\n");
                 } else {
-                    char response[512];
-                    response_generator(context, &match_result, pat_i_am,  sizeof(pat_i_am)/sizeof(pat_i_am[0]), response, sizeof(response));
-                    printf("%s", response);
+                    if (found->rules_count > 0) {
+                        ElizaRule* rule = &found->rules[0];
+                        char response[512];
+                        response_generator(context, &match_result, rule->pattern, rule->pattern_size,
+                                           response, sizeof(response));
+                        printf("%s", response);
+                    } else {
+                        printf("ELIZA:>Tell me more\n");
+                    }
 
 
                 }
