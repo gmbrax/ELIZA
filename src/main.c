@@ -126,13 +126,13 @@ void tokenize( ElizaContext* context, char* input_buffer) {
 }
 
 
-char* keyword_scanner(ElizaContext* context, ElizaKeyword keywords[],  unsigned int keyword_count){
-    char *best_word = NULL;
+ElizaKeyword* keyword_scanner(ElizaContext* context, ElizaKeyword keywords[],  unsigned int keyword_count){
+    ElizaKeyword *best_word = NULL;
     int best_word_weight = -1;
     for (int keyword_idx = 0; keyword_idx < keyword_count ; keyword_idx++) {
        for (int token_idx = 0; token_idx < context->word_count; token_idx++) {
            if (strcmp(context->words[token_idx], keywords[keyword_idx].word) == 0  && (best_word_weight < keywords[keyword_idx].weight)){
-               best_word = context->words[token_idx];
+               best_word = &keywords[keyword_idx];
                best_word_weight = keywords[keyword_idx].weight;
 
            }
@@ -210,7 +210,7 @@ int ELIZALoop(ElizaContext* context) {
                 tokenize(context, input_buffer);
 
                 size_t keyword_count = sizeof(keywords_array)/sizeof(keywords_array[0]);
-                char* found = keyword_scanner(context, keywords_array, keyword_count);
+                ElizaKeyword* found = keyword_scanner(context, keywords_array, keyword_count);
                 if (found == NULL) {
                     printf("ELIZA:>Tell me more\n");
                 } else {
