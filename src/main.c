@@ -22,9 +22,18 @@ typedef struct {
     char*     word;
 } PatternToken;
 
+typedef  struct {
+    PatternToken* pattern;
+    int pattern_size;
+    char** response;
+    int response_count;
+}ElizaRule;
+
 typedef struct {
     char*  word;
     int  weight;
+    ElizaRule* rules;
+    int rules_count;
 }ElizaKeyword;
 
 
