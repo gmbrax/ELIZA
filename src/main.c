@@ -173,6 +173,21 @@ int pattern_match(PatternToken pattern[], int pattern_size, int current_pattern_
 }
 
 
+void response_generator(ElizaContext* context, MatchResult* match_result,
+                        PatternToken pattern[], int pattern_size,
+                        char* out, size_t out_size) {
+    if (pattern_match(pattern, pattern_size, 0, context, 0, match_result, 0)) {
+        char group_text[256] = "";
+        for (int w = match_result->group_start[1]; w < match_result->group_end[1]; w++) {
+            strcat(group_text, context->words[w]);
+            strcat(group_text, " ");
+        }
+        snprintf(out, out_size, "ELIZA:> Why do you say you are %s?\n", group_text);
+    } else {
+        snprintf(out, out_size, "ELIZA:> Tell me more\n");
+    }
+}
+
 int ELIZALoop(ElizaContext* context) {
 
     bool is_running = true;
@@ -188,25 +203,22 @@ int ELIZALoop(ElizaContext* context) {
                 is_running = false;
             } else if (input_buffer[0] == '\0') {           // ← vazio idiomático
                 printf("ELIZA:>Tell me more\n");
-            } else {
+            }
+            else {
                 lowercase_string(input_buffer);             // (clean_newline já foi)
                 remove_punctuation(input_buffer);
                 tokenize(context, input_buffer);
-                MatchResult m = {0};
-                int size = sizeof(pat_i_am)/sizeof(pat_i_am[0]);
-                printf("DEBUG casou: %d\n", pattern_match(pat_i_am, size, 0, context, 0, &m, 0));
-                for (int g = 0; g < m.group_count; g++) {
-                    printf("grupo %d = ", g);
-                    for (int w = m.group_start[g]; w < m.group_end[g]; w++)
-                        printf("%s ", context->words[w]);
-                    printf("\n");
-                }
+
                 size_t keyword_count = sizeof(keywords_array)/sizeof(keywords_array[0]);
                 char* found = keyword_scanner(context, keywords_array, keyword_count);
                 if (found == NULL) {
                     printf("ELIZA:>Tell me more\n");
                 } else {
-                    printf("ELIZA:>  %s\n", found);
+                    char response[512];
+                    response_generator(context, &match_result, pat_i_am,  sizeof(pat_i_am)/sizeof(pat_i_am[0]), response, sizeof(response));
+                    printf("%s", response);
+
+
                 }
             }
         }
