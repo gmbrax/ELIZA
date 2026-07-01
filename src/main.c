@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_GROUPS 16
+
 typedef struct context {
     char*  words[128];
     int   word_count;
@@ -25,6 +27,12 @@ typedef struct {
     int  weight;
 }ElizaKeyword;
 
+
+typedef struct {
+    int group_count;
+    int group_start[MAX_GROUPS];
+    int group_end[MAX_GROUPS];
+}MatchResult;
 
 ElizaKeyword keywords_array[] = {
     {"i",1},
@@ -132,7 +140,8 @@ char* keyword_scanner(ElizaContext* context, ElizaKeyword keywords[],  unsigned 
     }
     return best_word;
 }
-int pattern_match(PatternToken pattern[], int pattern_size, int current_pattern_index, ElizaContext* context, int current_phrase_index) {
+int pattern_match(PatternToken pattern[], int pattern_size, int current_pattern_index, ElizaContext* context,
+    int current_phrase_index, MatchResult* match_result, int group_index) {
     if (current_pattern_index == pattern_size)
         return (current_phrase_index == context->word_count);
 
@@ -141,15 +150,21 @@ int pattern_match(PatternToken pattern[], int pattern_size, int current_pattern_
     if (current_pattern.type == TOKEN_LITERAL) {
         if (current_phrase_index < context->word_count
             && strcmp(context->words[current_phrase_index], current_pattern.word) == 0) {
-            return pattern_match(pattern, pattern_size, current_pattern_index + 1, context, current_phrase_index + 1);
+            return pattern_match(pattern, pattern_size, current_pattern_index + 1, context, current_phrase_index + 1,match_result, group_index);
             }
         return 0;
     }
 
     if (current_pattern.type == TOKEN_WILDCARD) {
         for (int gobble_index = 0; gobble_index <= (context->word_count - current_phrase_index); gobble_index++) {
-            if (pattern_match(pattern, pattern_size, current_pattern_index + 1, context, current_phrase_index + gobble_index))
+            if (pattern_match(pattern, pattern_size, current_pattern_index + 1, context,
+                              current_phrase_index + gobble_index, match_result, group_index + 1)) {
+                match_result->group_start[group_index] = current_phrase_index;
+                match_result->group_end[group_index]   = current_phrase_index + gobble_index;
+                if (group_index + 1 > match_result->group_count)
+                    match_result->group_count = group_index + 1;
                 return 1;
+                              }
         }
         return 0;
     }
@@ -164,6 +179,7 @@ int ELIZALoop(ElizaContext* context) {
     char input_buffer[512];
     while (is_running) {
         reset_context(context);
+        MatchResult match_result = {0};
         if (!get_input(input_buffer, sizeof(input_buffer))) {
             is_running = false;
         } else {
@@ -176,6 +192,15 @@ int ELIZALoop(ElizaContext* context) {
                 lowercase_string(input_buffer);             // (clean_newline já foi)
                 remove_punctuation(input_buffer);
                 tokenize(context, input_buffer);
+                MatchResult m = {0};
+                int size = sizeof(pat_i_am)/sizeof(pat_i_am[0]);
+                printf("DEBUG casou: %d\n", pattern_match(pat_i_am, size, 0, context, 0, &m, 0));
+                for (int g = 0; g < m.group_count; g++) {
+                    printf("grupo %d = ", g);
+                    for (int w = m.group_start[g]; w < m.group_end[g]; w++)
+                        printf("%s ", context->words[w]);
+                    printf("\n");
+                }
                 size_t keyword_count = sizeof(keywords_array)/sizeof(keywords_array[0]);
                 char* found = keyword_scanner(context, keywords_array, keyword_count);
                 if (found == NULL) {
